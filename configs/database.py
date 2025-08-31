@@ -47,10 +47,9 @@ class DatabaseManager:
             logger.error(f"Database connection failed: {e}")
             self.is_connected = False
 
-            # Still try to load embedding model for mock responses
             try:
                 self.embedding_model = SentenceTransformer(config.EMBEDDING_MODEL)
-                logger.info("Loaded embedding model for mock responses")
+                logger.info("Loaded embedding model for no responses")
             except Exception as embed_error:
                 logger.error(f"Failed to load embedding model: {embed_error}")
 
@@ -86,7 +85,6 @@ class DatabaseManager:
             return False
 
     async def search_documents(self, query: str, max_results: int = None) -> List[SearchResult]:
-
         if max_results is None:
             max_results = config.TOP_K
 
@@ -95,28 +93,47 @@ class DatabaseManager:
             return []
 
         try:
-            query_embedding = self.embedding_model.encode([query])[0]
-            cursor = self.collection.find({}, {"content": 1, "embedding": 1, "source": 1, "category": 1})
+            # Generate query embedding
+            query_embedding = self.embedding_model.encode([query])[0].tolist()
+            logger.info(f"Query embedding length: {len(query_embedding)}")
+
+            pipeline = [
+                {
+                    "$search": {
+                        "index": "vector_index",
+                        "knnBeta": {
+                            "vector": query_embedding,
+                            "path": "embedding",
+                            "k": max_results
+                        }
+                    }
+                },
+                {
+                    "$project": {
+                        "content": 1,
+                        "source": 1,
+                        "category": 1,
+                        "_id": 0,
+                        "score": {"$meta": "searchScore"}
+                    }
+                }
+            ]
+
             results = []
+            async for doc in self.collection.aggregate(pipeline):
+                results.append(SearchResult(
+                    content=doc["content"],
+                    similarity=float(doc.get("score", 0.0)),
+                    source=doc.get("source", "Unknown"),
+                    category=doc.get("category", "general")
+                ))
 
-            async for doc in cursor:
-                if "embedding" in doc and doc["embedding"]:
-                    doc_embedding = np.array(doc["embedding"])
-                    similarity = cosine_similarity([query_embedding], [doc_embedding])[0][0]
-                    if similarity >= config.SIMILARITY_THRESHOLD:
-                        results.append(SearchResult(
-                            content=doc["content"],
-                            similarity=float(similarity),
-                            source=doc.get("source", "Unknown"),
-                            category=doc.get("category", "general")
-                        ))
-
-            results.sort(key=lambda x: x.similarity, reverse=True)
-            return results[:max_results]
+            return results
 
         except Exception as e:
-            logger.error(f"Document search error: {e}")
+            logger.error(f"Vector search error: {e}")
             return []
+
 
     async def get_document_count(self) -> int:
 

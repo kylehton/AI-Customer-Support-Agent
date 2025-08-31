@@ -38,8 +38,8 @@ class Config:
             if not cls.MONGODB_URL:
                 raise ValueError("MONGODB_URL is required")
             
-            if cls.MAX_SOURCES <= 0:
-                raise ValueError("MAX_SOURCES must be positive")
+            if cls.TOP_K <= 0:
+                raise ValueError("TOP_K must be positive")
             
             if not 0 <= cls.SIMILARITY_THRESHOLD <= 1:
                 raise ValueError("SIMILARITY_THRESHOLD must be between 0 and 1")
