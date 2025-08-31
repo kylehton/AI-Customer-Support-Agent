@@ -1,7 +1,3 @@
-"""
-Database connection and operations for AI Customer Support
-"""
-
 import sys
 import os
 from typing import List, Optional
@@ -30,7 +26,7 @@ class DatabaseManager:
         self.is_connected: bool = False
 
     async def connect(self) -> bool:
-        """Connect to MongoDB and initialize embedding model."""
+
         try:
             self.client = AsyncIOMotorClient(config.MONGODB_URL)
             self.db = self.client[config.DATABASE_NAME]
@@ -67,7 +63,7 @@ class DatabaseManager:
             logger.info("Database connection closed")
 
     async def add_document(self, content: str, source: str, category: str = "general") -> bool:
-        """Add a document with embedding to MongoDB."""
+
         if not self.is_connected or self.collection is None:
             logger.warning("Database not connected, cannot add document")
             return False
@@ -90,9 +86,9 @@ class DatabaseManager:
             return False
 
     async def search_documents(self, query: str, max_results: int = None) -> List[SearchResult]:
-        """Search MongoDB for documents similar to the query."""
+
         if max_results is None:
-            max_results = config.MAX_SOURCES
+            max_results = config.TOP_K
 
         if not self.is_connected or self.collection is None:
             logger.warning("Database not connected, returning mock results")
@@ -123,7 +119,7 @@ class DatabaseManager:
             return []
 
     async def get_document_count(self) -> int:
-        """Return total number of documents in the collection."""
+
         if not self.is_connected or self.collection is None:
             return 0
         try:

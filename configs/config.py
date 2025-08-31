@@ -1,6 +1,4 @@
-
 import os
-from typing import List
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -19,10 +17,10 @@ class Config:
     EMBEDDING_MODEL: str = os.getenv("EMBEDDING_MODEL", "all-MiniLM-L6-v2")
     
     # RAG settings
-    MAX_SOURCES: int = int(os.getenv("MAX_SOURCES", "5"))
+    TOP_K: int = int(os.getenv("TOP_K", "3"))
     SIMILARITY_THRESHOLD: float = float(os.getenv("SIMILARITY_THRESHOLD", "0.3"))
-    CHUNK_SIZE: int = int(os.getenv("CHUNK_SIZE", "500"))
-    CHUNK_OVERLAP: int = int(os.getenv("CHUNK_OVERLAP", "50"))
+    #CHUNK_SIZE: int = int(os.getenv("CHUNK_SIZE", "500"))
+    #CHUNK_OVERLAP: int = int(os.getenv("CHUNK_OVERLAP", "50"))
     
     # API settings
     HOST: str = os.getenv("HOST", "0.0.0.0")
@@ -32,13 +30,9 @@ class Config:
     
     # Agent settings
     AGENT_TEMPERATURE: float = float(os.getenv("AGENT_TEMPERATURE", "0.3"))
-    MAX_TOKENS_TRIAGE: int = int(os.getenv("MAX_TOKENS_TRIAGE", "150"))
-    MAX_TOKENS_TECHNICAL: int = int(os.getenv("MAX_TOKENS_TECHNICAL", "300"))
-    MAX_TOKENS_COMMUNICATION: int = int(os.getenv("MAX_TOKENS_COMMUNICATION", "400"))
     
     @classmethod
     def validate(cls) -> bool:
-        """Validate configuration settings"""
         try:
             # Check required settings
             if not cls.MONGODB_URL:
